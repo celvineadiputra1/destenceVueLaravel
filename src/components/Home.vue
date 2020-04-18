@@ -11,11 +11,11 @@
             <v-row>
                 <v-col cols="12">
                     <v-alert :value="alert" color="green accent-4 white--text" border="left"
-                        transition="scale-transition" type="success" dismissible>
+                        transition="scale-transition" dismissible>
                         Lorem ipsum dolor sit amet.
                     </v-alert>
                     <v-alert :value="alert2" color="red accent-4 white--text" border="left"
-                        transition="scale-transition" type="danger" dismissible>
+                        transition="scale-transition" dismissible>
                         {{alertMessage}}
                     </v-alert>
                 </v-col>
@@ -32,10 +32,10 @@
                             <v-row>
                                 <v-col cols=12 md=12>
                                     <v-text-field hint="example : -2.991401" :label="latitude" :counter="10"
-                                        :rules="inputRules" v-model="value_latitudeStart" required></v-text-field>
+                                        :rules="inputRules" v-model="value_latitude0" required></v-text-field>
 
                                     <v-text-field hint="example : 104.763345" :label="longitude" :counter="10"
-                                        :rules="inputRules" v-model="value_longitudeStart" required></v-text-field>
+                                        :rules="inputRules" v-model="value_longitude0" required></v-text-field>
                                 </v-col>
                             </v-row>
                         </v-container>
@@ -48,10 +48,10 @@
                             <v-row>
                                 <v-col cols=12 md=12>
                                     <v-text-field :label="latitude" :counter="10" :rules="inputRules"
-                                        v-model="value_latitudeEnd"></v-text-field>
+                                        v-model="value_latitude1"></v-text-field>
 
                                     <v-text-field :label="longitude" :counter="10" :rules="inputRules"
-                                        v-model="value_longitudeEnd"></v-text-field>
+                                        v-model="value_longitude1"></v-text-field>
                                 </v-col>
                             </v-row>
                         </v-container>
@@ -74,7 +74,7 @@
                     <v-expansion-panels accordion v-if="listValue.length != 0">
                         <v-expansion-panel v-for="(item,index) in listValue" :key="index">
                             <v-expansion-panel-header class="font-weight-black">
-                                {{item.Jarak}}
+                                {{item.Jarak}} KM
                             </v-expansion-panel-header>
                             <v-expansion-panel-content>
                                 <v-simple-table>
@@ -86,19 +86,19 @@
                                             </tr>
                                             <tr>
                                                 <td class="subtitle-1 font-weight-bold">LatitudeStart</td>
-                                                <td>{{item.LatitudeStart}}</td>
+                                                <td>{{item.Latitude0}}</td>
                                             </tr>
                                             <tr>
                                                 <td class="subtitle-1 font-weight-bold">LongitudeStart</td>
-                                                <td>{{item.LongitudeStart}}</td>
+                                                <td>{{item.Longtide0}}</td>
                                             </tr>
                                             <tr>
                                                 <td class="subtitle-1 font-weight-bold">LatitudeEnd</td>
-                                                <td>{{item.LatitudeEnd}}</td>
+                                                <td>{{item.Latitude1}}</td>
                                             </tr>
                                             <tr>
                                                 <td class="subtitle-1 font-weight-bold">LongitudeEnd</td>
-                                                <td>{{item.LongitudeEnd}}</td>
+                                                <td>{{item.Longtide1}}</td>
                                             </tr>
                                             <tr>
                                                 <td colspan="2">
@@ -129,6 +129,7 @@
 </template>
 
 <script>
+import axios from 'axios';
     export default {
         name: "Home",
         data() {
@@ -137,31 +138,17 @@
                 latitude: "latitude",
                 longitude: "longitude",
 
-                value_latitudeStart: 0,
-                value_longitudeStart: 0,
+                value_latitude0: 0,
+                value_longitude0: 0,
 
-                value_latitudeEnd: 0,
-                value_longitudeEnd: 0,
+                value_latitude1: 0,
+                value_longitude1: 0,
 
                 alert: false,
                 alert2: false,
                 alertMessage: "xpo",
-
-                listValue: [{
-                        'Jarak': "40 Km",
-                        'LatitudeStart': "-2.991401",
-                        'LongitudeStart': "-2.991401",
-                        'LatitudeEnd': "-2.991401",
-                        'LongitudeEnd': "-2.991401",
-                    },
-                    {
-                        'Jarak': "41 Km",
-                        'LatitudeStart': "-2.1991401",
-                        'LongitudeStart': "-2.991401",
-                        'LatitudeEnd': "-2.991401",
-                        'LongitudeEnd': "-2.991401",
-                    }
-                ],
+                listValue : [],
+                jarak : 0,
 
                 inputRules: [
                     v => !!v || 'Lantitude is Reuqire',
@@ -169,16 +156,38 @@
                 ]
             }
         },
+        mounted(){
+            axios.get('distance').then(
+                response => (
+                    this.pushToList(response.data.data)
+                ));
+        },
         methods: {
+            pushToList(data){
+                for (let i = 0; i < data.length; i++) {
+                    this.listValue = data
+                }
+            },
+            COLLECT(){
+                let co = {
+                        'Latitude0': this.value_latitude0,
+                        'Longtide0': this.value_longitude0,
+                        'Latitude1': this.value_latitude1,
+                        'Longtide1': this.value_longitude1,
+                        'Jarak': this.jarak,
+                    };
+                return co;
+            },
             hitungAction() {
                 if (this.$refs.form.validate()) {
-                    this.alert = !this.alert;
-                    this.listValue.push({
-                        'Jarak': "0 Km",
-                        'LatitudeStart': this.value_latitudeStart,
-                        'LongitudeStart': this.value_longitudeStart,
-                        'LatitudeEnd': this.value_latitudeEnd,
-                        'LongitudeEnd': this.value_longitudeEnd
+                    console.log(this.COLLECT());
+                    axios({
+                        method : 'put',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        url : 'distance/15',
+                        data : JSON.stringify(this.COLLECT())
+                    }).then(response=>{
+                        console.log(response);
                     });
                 }
             },
@@ -187,8 +196,15 @@
             },
             remove(index) {
                 if (index <= this.listValue.length) {
-                    this.listValue.splice(index, 1);
-                    this.alert2 = false;
+                    axios.delete(`distance/${this.listValue[index].id}`).then(
+                        response => {
+                            if(response.data == 1){   
+                                this.listValue.splice(index, 1);
+                                this.alertMessage = "Penghapusan Berhasil"
+                                this.alert = true
+                                this.alert2 = false;
+                            }
+                        });
                 } else {
                     this.alertMessage = "Terjadi kesalahan pada manusia";
                     this.alert2 = !this.alert2;
@@ -196,12 +212,15 @@
             },
             edit(index) {
                 if (index <= this.listValue.length) {
-                    this.value_latitudeStart = this.listValue[index].LatitudeStart;
-                    this.value_longitudeStart = this.listValue[index].LongitudeStart;
+                    this.jarak = this.listValue[index].Jarak
+                    this.value_latitude1 = this.listValue[index].Latitude1;
+                    this.value_longitude1 = this.listValue[index].Longtide1;
 
-                    this.value_latitudeEnd = this.listValue[index].LatitudeEnd;
-                    this.value_longitudeEnd = this.listValue[index].LongitudeEnd;
+                    this.value_latitude0 = this.listValue[index].Latitude0;
+                    this.value_longitude0 = this.listValue[index].Longtide0;
                     this.alert2 = false;
+                    
+                    this.listValue.splice(index,1);
                 } else {
                     this.alertMessage = "Terjadi kesalahan pada manusia";
                     this.alert2 = !this.alert2;
